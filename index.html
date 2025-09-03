@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kalkulator AI</title>
+    <style>
+      body {
+        background-color: #1e1e1e;
+        color: #fff;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+
+      .calculator-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: minmax(120px, auto) repeat(5, 1fr);
+        gap: 10px;
+        width: 320px;
+        padding: 15px;
+        background-color: #000;
+        border-radius: 20px;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .output {
+        grid-column: 1 / -1;
+        background-color: #000;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: space-around;
+        padding: 10px;
+        border-radius: 10px;
+        word-wrap: break-word;
+        word-break: break-all;
+      }
+
+      .output .previous-operand {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.5rem;
+      }
+
+      .output .current-operand {
+        color: white;
+        font-size: 3rem;
+      }
+
+      button {
+        border: none;
+        outline: none;
+        background-color: #333;
+        color: white;
+        font-size: 1.8rem;
+        border-radius: 50%;
+        padding: 20px;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+      }
+
+      button:hover {
+        background-color: #555;
+      }
+
+      .operator {
+        background-color: #ff9500;
+      }
+
+      .operator:hover {
+        background-color: #ffa522;
+      }
+
+      .span-two {
+        grid-column: span 2;
+        border-radius: 50px;
+      }
+
+      .ac-button {
+        background-color: #a5a5a5;
+        color: #000;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calculator-grid">
+      <div class="output">
+        <div data-previous-operand class="previous-operand"></div>
+        <div data-current-operand class="current-operand"></div>
+      </div>
+      <button data-all-clear class="span-two ac-button">AC</button>
+      <button data-operator class="operator">%</button>
+      <button data-operator class="operator">&divide;</button>
+      <button data-number>7</button>
+      <button data-number>8</button>
+      <button data-number>9</button>
+      <button data-operator class="operator">&times;</button>
+      <button data-number>4</button>
+      <button data-number>5</button>
+      <button data-number>6</button>
+      <button data-operator class="operator">-</button>
+      <button data-number>1</button>
+      <button data-number>2</button>
+      <button data-number>3</button>
+      <button data-operator class="operator">+</button>
+      <button data-number class="span-two">0</button>
+      <button data-number>.</button>
+      <button data-equals class="operator">=</button>
+    </div>
+
+    <script>
+      class Calculator {
+        constructor(previousOperandTextElement, currentOperandTextElement) {
+          this.previousOperandTextElement = previousOperandTextElement;
+          this.currentOperandTextElement = currentOperandTextElement;
+          this.clear();
+          this.operators = ["+", "-", "÷", "×", "%"];
+        }
+
+        clear() {
+          this.currentOperand = "";
+          this.previousOperand = "";
+        }
+
+        appendNumber(number) {
+          if (number === "." && this.currentOperand.includes(".")) return;
+          this.currentOperand =
+            this.currentOperand.toString() + number.toString();
+        }
+
+        appendOperation(operation) {
+          if (this.currentOperand === "") return;
+          const lastChar = this.currentOperand.slice(-1);
+          if (this.operators.includes(lastChar)) {
+            // Mencegah operator ganda
+            this.currentOperand =
+              this.currentOperand.slice(0, -1) + operation.toString();
+          } else {
+            this.currentOperand =
+              this.currentOperand.toString() + operation.toString();
+          }
+        }
+
+        async compute() {
+          const expression = this.currentOperand
+            .replace(/÷/g, "/")
+            .replace(/×/g, "*");
+
+          try {
+            // Mengirimkan ekspresi matematika ke back-end
+            const response = await fetch("http://127.0.0.1:5000/calculate", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ expression: expression }),
+            });
+
+            const data = await response.json();
+            if (data.status === "success") {
+              this.currentOperand = data.result;
+            } else {
+              this.currentOperand = data.message;
+            }
+            this.updateDisplay(); // PENTING: Panggil updateDisplay di sini
+          } catch (error) {
+            console.error("Error:", error);
+            this.currentOperand = "Error";
+            this.updateDisplay(); // PENTING: Panggil updateDisplay di sini juga
+          }
+        }
+
+        updateDisplay() {
+          this.previousOperandTextElement.innerText = "";
+          this.currentOperandTextElement.innerText = this.currentOperand;
+        }
+      }
+
+      const numberButtons = document.querySelectorAll("[data-number]");
+      const operationButtons = document.querySelectorAll("[data-operator]");
+      const equalsButton = document.querySelector("[data-equals]");
+      const allClearButton = document.querySelector("[data-all-clear]");
+      const previousOperandTextElement = document.querySelector(
+        "[data-previous-operand]"
+      );
+      const currentOperandTextElement = document.querySelector(
+        "[data-current-operand]"
+      );
+
+      const calculator = new Calculator(
+        previousOperandTextElement,
+        currentOperandTextElement
+      );
+
+      numberButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          calculator.appendNumber(button.innerText);
+          calculator.updateDisplay();
+        });
+      });
+
+      operationButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          calculator.appendOperation(button.innerText);
+          calculator.updateDisplay();
+        });
+      });
+
+      equalsButton.addEventListener("click", () => {
+        calculator.compute();
+      });
+
+      allClearButton.addEventListener("click", () => {
+        calculator.clear();
+        calculator.updateDisplay();
+      });
+    </script>
+  </body>
+</html>
