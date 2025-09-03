@@ -20,13 +20,13 @@ Pastikan Anda memiliki hal-hal berikut terinstal di komputer Anda:
 
 1. **Kloning repositori**:  
    Jika Anda memiliki Git, buka terminal dan jalankan perintah berikut:  
-   git clone https://github.com/kinzx/kalkulator-ai-flask
+   ``git clone https://github.com/kinzx/kalkulator-ai-flask``
 
    Setelah itu, navigasi ke direktori proyek:  
-   cd kalkulator-ai-flask
+   ``cd kalkulator-ai-flask``
 
 2. **Instal library Python yang diperlukan**:  
-   pip install Flask Flask-Cors replicate
+   ``pip install Flask Flask-Cors replicate``
 
 3. **Dapatkan Kunci API Replicate Anda**:  
    * Daftar atau masuk ke [situs web Replicate](https://replicate.com).  
